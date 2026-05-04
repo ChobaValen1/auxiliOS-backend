@@ -273,30 +273,57 @@ app.get('/api/remitos/:id', async (req, res) => {
 
 // ── BUSCAR EMAIL POR DNI (para login con DNI) ────────────────
 app.post('/api/email-by-dni', async (req, res) => {
-  const { dni } = req.body;
-  if (!dni) return res.status(400).json({ error: 'DNI requerido' });
+  try {
+    const { dni } = req.body;
+    if (!dni) return res.status(400).json({ error: 'DNI requerido' });
 
-  const { data, error } = await supabaseAdmin
-    .from('users')
-    .select('email')
-    .eq('dni', String(dni).trim())
-    .single();
+    const { data, error } = await supabaseAdmin
+      .from('users')
+      .select('email')
+      .eq('dni', String(dni).trim())
+      .single();
 
-  if (error || !data) return res.status(404).json({ error: 'DNI no encontrado' });
-  res.json({ email: data.email });
+    if (error || !data) return res.status(404).json({ error: 'DNI no encontrado' });
+    res.json({ email: data.email });
+  } catch (err) {
+    console.error('email-by-dni error:', err.message);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 });
 
 // ── RESET DE CONTRASEÑA (solo admin) ────────────────────────
 app.post('/api/reset-password', async (req, res) => {
-  const { userId, newPassword } = req.body;
-  if (!userId || !newPassword)
-    return res.status(400).json({ error: 'Faltan campos obligatorios' });
-  if (newPassword.length < 8)
-    return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) return res.status(401).json({ error: 'No autenticado' });
 
-  const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, { password: newPassword });
-  if (error) return res.status(500).json({ error: error.message });
-  res.json({ ok: true });
+    const { data: { user: caller }, error: authErr } = await supabaseAdmin.auth.getUser(token);
+    if (authErr || !caller) return res.status(401).json({ error: 'Token inválido' });
+
+    const { data: profile, error: profileErr } = await supabaseAdmin
+      .from('users')
+      .select('role')
+      .eq('user_id', caller.id)
+      .single();
+    if (profileErr || !profile || profile.role !== 'administracion')
+      return res.status(403).json({ error: 'No autorizado' });
+
+    const { userId, newPassword } = req.body;
+    if (!userId || !newPassword)
+      return res.status(400).json({ error: 'Faltan campos obligatorios' });
+    if (newPassword.length < 8)
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, { password: newPassword });
+    if (error) {
+      console.error('reset-password supabase error:', error.message);
+      return res.status(500).json({ error: 'No se pudo actualizar la contraseña' });
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('reset-password error:', err.message);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 });
 
 // ── CREAR USUARIO (Supabase Auth + tabla users) ────────────────
