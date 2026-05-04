@@ -21,7 +21,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5500',
   'http://127.0.0.1:5500',
-  'https://REEMPLAZAR-CON-DOMINIO.vercel.app',
+  'https://auxilios-arg.vercel.app',
 ];
 app.use(cors({
   origin: (origin, cb) => {
