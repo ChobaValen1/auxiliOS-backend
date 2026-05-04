@@ -271,6 +271,34 @@ app.get('/api/remitos/:id', async (req, res) => {
   }
 });
 
+// ── BUSCAR EMAIL POR DNI (para login con DNI) ────────────────
+app.post('/api/email-by-dni', async (req, res) => {
+  const { dni } = req.body;
+  if (!dni) return res.status(400).json({ error: 'DNI requerido' });
+
+  const { data, error } = await supabaseAdmin
+    .from('users')
+    .select('email')
+    .eq('dni', String(dni).trim())
+    .single();
+
+  if (error || !data) return res.status(404).json({ error: 'DNI no encontrado' });
+  res.json({ email: data.email });
+});
+
+// ── RESET DE CONTRASEÑA (solo admin) ────────────────────────
+app.post('/api/reset-password', async (req, res) => {
+  const { userId, newPassword } = req.body;
+  if (!userId || !newPassword)
+    return res.status(400).json({ error: 'Faltan campos obligatorios' });
+  if (newPassword.length < 8)
+    return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+
+  const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, { password: newPassword });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
 // ── CREAR USUARIO (Supabase Auth + tabla users) ────────────────
 const ROLE_IDS = { administracion: 1, supervision: 2, chofer: 3 };
 
