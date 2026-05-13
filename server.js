@@ -302,10 +302,11 @@ app.post('/api/reset-password', async (req, res) => {
 
     const { data: profile, error: profileErr } = await supabaseAdmin
       .from('users')
-      .select('role')
+      .select('role, role_id')
       .eq('user_id', caller.id)
       .single();
-    if (profileErr || !profile || profile.role !== 'administracion')
+    const esAdmin = profile?.role === 'administracion' || profile?.role_id === 1;
+    if (profileErr || !profile || !esAdmin)
       return res.status(403).json({ error: 'No autorizado' });
 
     const { userId, newPassword } = req.body;
@@ -330,7 +331,7 @@ app.post('/api/reset-password', async (req, res) => {
 const ROLE_IDS = { administracion: 1, supervision: 2, chofer: 3 };
 
 app.post('/api/create-user', async (req, res) => {
-  const { full_name, email, legajo, role_name, phone } = req.body;
+  const { full_name, email, legajo, role_name, phone, dni } = req.body;
   if (!full_name || !email || !legajo || !role_name)
     return res.status(400).json({ error: 'Faltan campos obligatorios' });
 
@@ -351,7 +352,7 @@ app.post('/api/create-user', async (req, res) => {
   // 2. Insertar perfil en tabla users con el UUID de Auth
   const { error: dbErr } = await supabaseAdmin
     .from('users')
-    .insert({ user_id, role_id, legajo, email, full_name, phone: phone || null });
+    .insert({ user_id, role_id, role: role_name, legajo, email, full_name, phone: phone || null, dni: dni || null });
 
   if (dbErr) {
     // Revertir cuenta Auth si falla el perfil
