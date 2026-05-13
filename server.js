@@ -350,12 +350,12 @@ app.post('/api/create-user', async (req, res) => {
   const user_id = authData.user.id;
 
   // 2. Insertar perfil en tabla users con el UUID de Auth
+  // password_hash: columna NOT NULL del schema original; placeholder porque auth es vía Supabase Auth
   const { error: dbErr } = await supabaseAdmin
     .from('users')
-    .insert({ user_id, role_id, role: role_name, legajo, email, full_name, phone: phone || null, dni: dni || null });
+    .insert({ user_id, role_id, legajo, email, full_name, phone: phone || null, dni: dni || null, password_hash: 'SUPABASE_AUTH' });
 
   if (dbErr) {
-    // Revertir cuenta Auth si falla el perfil
     await supabaseAdmin.auth.admin.deleteUser(user_id);
     return res.status(500).json({ error: dbErr.message });
   }
