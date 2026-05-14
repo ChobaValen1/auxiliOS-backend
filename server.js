@@ -302,11 +302,11 @@ app.post('/api/reset-password', async (req, res) => {
 
     const { data: profile, error: profileErr } = await supabaseAdmin
       .from('users')
-      .select('role, role_id')
+      .select('role, role_id, roles(name)')
       .eq('user_id', caller.id)
       .single();
-    const esAdmin = profile?.role === 'administracion' || profile?.role_id === 1;
-    if (profileErr || !profile || !esAdmin)
+    const roleName = profile?.roles?.name || profile?.role || '';
+    if (profileErr || !profile || roleName !== 'administracion')
       return res.status(403).json({ error: 'No autorizado' });
 
     const { userId, newPassword } = req.body;
