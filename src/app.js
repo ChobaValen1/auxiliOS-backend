@@ -129,9 +129,9 @@ function createApp({ config, supabaseAdmin, createSupabasePublicClient, pool, lo
   }));
 
   const loginLimiter = makeLimiter({
-    windowMs: 15 * 60 * 1000,
+    windowMs: 5 * 60 * 1000,
     limit: 10,
-    message: 'Demasiados intentos de acceso. Intentá nuevamente en 15 minutos.',
+    message: 'Demasiados intentos de acceso. Intentá nuevamente en 5 minutos.',
   });
   const adminWriteLimiter = makeLimiter({
     windowMs: 15 * 60 * 1000,
