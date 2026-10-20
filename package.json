@@ -4,7 +4,7 @@
   "description": "Backend Express para AuxiliOS — uploads, OCR y API",
   "main": "server.js",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "start": "node server.js",
